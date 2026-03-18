@@ -1,5 +1,5 @@
 
-
+'''
 stages:
   - sync
 
@@ -9,6 +9,8 @@ sync_photos:
     - local-runner
   script:
     - powershell -ExecutionPolicy Bypass -File scripts/sync.ps1  
+'''
+
 ########
 $ErrorActionPreference = "Stop"
 
