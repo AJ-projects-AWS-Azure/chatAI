@@ -37,3 +37,5 @@ azcopy sync $source $dest --recursive --delete-destination=true --log-level=INFO
 
 Write-Log "Sync completed."
 -------------
+
+After quite search i thing i will go with easy way which is automate this using a PowerShell script with AzCopy authenticated via a service principal, running through a GitLab pipeline with a local runner that has access to the file share.
