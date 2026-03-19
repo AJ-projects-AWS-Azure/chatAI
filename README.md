@@ -1,5 +1,4 @@
-gitlab repo has been created and populated with PS script to and pipeline . one step left i need help with is make sure the   am1apit002 can accesses the  https://stphotprodgwcb5f8.blob.core.windows.net/images/portrait . 
-'''
+The GitLab repository has been created and populated with a PowerShell script and pipeline. One step left—I need help ensuring that am1apit002 can access https://stphotprodgwcb5f8.blob.core.windows.net/images/portrait.
 stages:
   - sync
 
