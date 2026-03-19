@@ -1,4 +1,4 @@
-
+gitlab repo has been created and populated with PS script to and pipeline . one step left i need help with is make sure the   am1apit002 can accesses the  https://stphotprodgwcb5f8.blob.core.windows.net/images/portrait . 
 '''
 stages:
   - sync
