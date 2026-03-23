@@ -34,6 +34,11 @@ $env:AZCOPY_TENANT_ID=$env:AZCOPY_TENANT_ID
 
 azcopy sync $source $dest --recursive --delete-destination=true --log-level=INFO
 
+----------------------------------------
+im looking into the CyberArk ... to get familiar with it .  should i  do somthing there like  requests ,,, im not sure still looking into it  
+-------------
+
+
 Write-Log "Sync completed."
 -------------
 
