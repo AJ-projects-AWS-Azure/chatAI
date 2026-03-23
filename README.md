@@ -1,45 +1,73 @@
-The GitLab repository has been created and populated with a PowerShell script and pipeline. One step left—I need help ensuring that am1apit002 can access https://stphotprodgwcb5f8.blob.core.windows.net/images/portrait.
-stages:
-  - sync
+param (
+    [string]$SourcePath = "\\ny139f02\shares\SocialPhotos\Portrait",
+    [string]$DestinationURL = "https://stphotprodgwcb5f8.blob.core.windows.net/images/portrait",
+    [string]$AzCopyPath = "C:\Tools\AzCopy\azcopy.exe"
+)
 
-sync_photos:
-  stage: sync
-  tags:
-    - local-runner
-  script:
-    - powershell -ExecutionPolicy Bypass -File scripts/sync.ps1  
-'''
+Write-Host "===== Photo Sync Job Started ====="
 
-########
-$ErrorActionPreference = "Stop"
-
-$source = "\\ny139f02\shares\SocialPhotos\Portrait"
-$dest   = $env:AZCOPY_STORAGE_URL
-
-$logFile = "C:\logs\azcopy-sync.log"
-New-Item -ItemType Directory -Force -Path "C:\logs" | Out-Null
-
-function Write-Log {
-    param([string]$message)
-    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    "$timestamp - $message" | Out-File -Append -FilePath $logFile
+# 🔹 Step 1 — Validate AzCopy exists
+if (-not (Test-Path $AzCopyPath)) {
+    Write-Error "AzCopy not found at $AzCopyPath"
+    exit 1
 }
 
-Write-Log "Starting sync..."
+# 🔹 Step 2 — Validate source path access
+if (-not (Test-Path $SourcePath)) {
+    Write-Error "Cannot access source path: $SourcePath"
+    exit 1
+}
 
-$env:AZCOPY_AUTO_LOGIN_TYPE="SPN"
-$env:AZCOPY_SPA_APPLICATION_ID=$env:AZCOPY_SPA_APPLICATION_ID
-$env:AZCOPY_SPA_CLIENT_SECRET=$env:AZCOPY_SPA_CLIENT_SECRET
-$env:AZCOPY_TENANT_ID=$env:AZCOPY_TENANT_ID
+Write-Host "Source path is accessible."
 
-azcopy sync $source $dest --recursive --delete-destination=true --log-level=INFO
+# 🔹 Step 3 — Check Azure connectivity (proxy detection)
+Write-Host "Checking Azure connectivity..."
 
-----------------------------------------
-im looking into the CyberArk ... to get familiar with it .  should i  do somthing there like  requests ,,, im not sure still looking into it  
--------------
+$connection = Test-NetConnection "stphotprodgwcb5f8.blob.core.windows.net" -Port 443
 
+if (-not $connection.TcpTestSucceeded) {
+    Write-Warning "Direct connection failed. Applying proxy..."
 
-Write-Log "Sync completed."
--------------
+    # ⚠️ TEMPORARY proxy (safe for shared runner)
+    $env:HTTPS_PROXY = "http://proxy:port"
 
-After quite search i thing i will go with easy way which is automate this using a PowerShell script with AzCopy authenticated via a service principal, running through a GitLab pipeline with a local runner that has access to the file share.
+    Write-Host "Proxy set for this session only."
+} else {
+    Write-Host "Direct connection successful. No proxy needed."
+}
+
+# 🔹 Step 4 — Set Azure authentication (Service Principal)
+$env:AZCOPY_AUTO_LOGIN_TYPE = "SPN"
+
+if (-not $env:AZCOPY_SPA_CLIENT_ID -or `
+    -not $env:AZCOPY_SPA_CLIENT_SECRET -or `
+    -not $env:AZCOPY_TENANT_ID) {
+
+    Write-Error "Missing Azure authentication environment variables"
+    exit 1
+}
+
+Write-Host "Azure authentication variables detected."
+
+# 🔹 Step 5 — Dry run (safe validation)
+Write-Host "Running AzCopy dry-run..."
+
+& $AzCopyPath sync $SourcePath $DestinationURL --recursive --dry-run
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Dry-run failed"
+    exit 1
+}
+
+# 🔹 Step 6 — Actual sync
+Write-Host "Running actual sync..."
+
+& $AzCopyPath sync $SourcePath $DestinationURL --recursive
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Sync failed"
+    exit 1
+}
+
+Write-Host "✅ Photo sync completed successfully!"
+exit 0
