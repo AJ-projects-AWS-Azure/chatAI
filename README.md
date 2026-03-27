@@ -1,1 +1,1 @@
-A terragrunt-onedrive-infra repo has been created from the app-repo-template. The next step is to add and modify the Terraform code.
+
